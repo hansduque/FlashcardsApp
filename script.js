@@ -1,3 +1,4 @@
+// ===== Data and Initialization =====
 let flashcards = JSON.parse(localStorage.getItem("flashcards")) || [
   { question: "What is the capital of France?", answer: "Paris", category: "Geography" },
   { question: "What is 2 + 2?", answer: "4", category: "Math" },
@@ -133,9 +134,13 @@ themeToggle.addEventListener("change", () => {
   document.body.classList.toggle("dark-mode", themeToggle.checked);
 });
 
-// ===== Quiz Mode (Enhanced) =====
+// ===== Quiz Mode (Enhanced & Fixed) =====
 startQuizButton.addEventListener("click", () => {
-  selectedCategory = currentCategory;
+  startQuiz(currentCategory);
+});
+
+function startQuiz(category) {
+  selectedCategory = category;
   quizQuestions = (selectedCategory === "all"
     ? [...flashcards]
     : flashcards.filter(card => card.category === selectedCategory)
@@ -152,8 +157,9 @@ startQuizButton.addEventListener("click", () => {
 
   flashcardContainer.style.display = "none";
   quizContainer.style.display = "block";
+
   showQuestion();
-});
+}
 
 function showQuestion() {
   const card = quizQuestions[currentQuestionIndex];
@@ -219,3 +225,6 @@ function showResults() {
 function restartQuiz() {
   startQuiz(selectedCategory);
 }
+
+// ===== Initial Render =====
+renderFlashcards();
