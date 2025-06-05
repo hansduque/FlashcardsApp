@@ -9,6 +9,7 @@ let flashcards = JSON.parse(localStorage.getItem("flashcards")) || [
 ];
 
 let currentCategory = "all";
+let selectedCategory = "";
 let quizQuestions = [];
 let currentQuestionIndex = 0;
 let totalQuestions = 0;
@@ -134,9 +135,10 @@ themeToggle.addEventListener("change", () => {
 
 // ===== Quiz Mode (Enhanced) =====
 startQuizButton.addEventListener("click", () => {
-  quizQuestions = (currentCategory === "all"
+  selectedCategory = currentCategory;
+  quizQuestions = (selectedCategory === "all"
     ? [...flashcards]
-    : flashcards.filter(card => card.category === currentCategory)
+    : flashcards.filter(card => card.category === selectedCategory)
   ).sort(() => Math.random() - 0.5);
 
   if (quizQuestions.length === 0) {
@@ -215,8 +217,5 @@ function showResults() {
 }
 
 function restartQuiz() {
-  startQuiz(currentCategory);
+  startQuiz(selectedCategory);
 }
-
-// ===== Initial Render =====
-renderFlashcards();
