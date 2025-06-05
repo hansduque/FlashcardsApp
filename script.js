@@ -155,6 +155,7 @@ function startQuiz(category) {
   totalQuestions = 0;
   correctAnswers = 0;
 
+  // ✅ Add this right here
   flashcardContainer.style.display = "none";
   quizContainer.style.display = "block";
 
@@ -218,12 +219,20 @@ function showResults() {
   quizContainer.innerHTML = `
     <h2>Quiz Complete!</h2>
     <p>You scored ${correctAnswers} out of ${totalQuestions}.</p>
-    <button onclick="restartQuiz()">Restart Quiz</button>
+    <button id="restartQuizButton">Restart Quiz</button>
+    <button id="backToFlashcardsButton">Back to Flashcards</button>
   `;
-}
 
-function restartQuiz() {
-  startQuiz(selectedCategory);
+  // Attach events manually after DOM insertion
+  document.getElementById("restartQuizButton").addEventListener("click", () => {
+    startQuiz(selectedCategory);
+  });
+
+  document.getElementById("backToFlashcardsButton").addEventListener("click", () => {
+    quizContainer.style.display = "none";
+    flashcardContainer.style.display = "flex";
+    renderFlashcards();
+  });
 }
 
 // ===== Initial Render =====
