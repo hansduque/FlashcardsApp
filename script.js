@@ -1,7 +1,3 @@
-// ============================
-// Flashcards App - script.js
-// ============================
-
 let flashcards = JSON.parse(localStorage.getItem("flashcards")) || [
   { question: "What is the capital of France?", answer: "Paris", category: "Geography" },
   { question: "What is 2 + 2?", answer: "4", category: "Math" },
@@ -12,155 +8,215 @@ let flashcards = JSON.parse(localStorage.getItem("flashcards")) || [
   { question: "Who was the last American Nobel Peace Price winer?", answer: "Barack Obama", category: "Politics" }
 ];
 
-const flashcardForm = document.getElementById("flashcardForm");
+let currentCategory = "all";
+let quizQuestions = [];
+let currentQuestionIndex = 0;
+let totalQuestions = 0;
+let correctAnswers = 0;
+
+// ===== DOM Elements =====
+const flashcardContainer = document.getElementById("flashcardContainer");
+const form = document.getElementById("flashcardForm");
 const questionInput = document.getElementById("questionInput");
 const answerInput = document.getElementById("answerInput");
-const flashcardContainer = document.getElementById("flashcardContainer");
+const categoryInput = document.getElementById("categoryInput");
 const shuffleButton = document.getElementById("shuffleButton");
-const resetButton = document.getElementById("resetButton");
 const clearButton = document.getElementById("clearButton");
 const exportButton = document.getElementById("exportButton");
 const importFile = document.getElementById("importFile");
+const categoryFilter = document.getElementById("categoryFilter");
 const themeToggle = document.getElementById("themeToggle");
-const categoryDashboard = document.getElementById("categoryDashboard");
-const backButton = document.getElementById("backButton");
+const startQuizButton = document.getElementById("startQuizButton");
+const quizContainer = document.getElementById("quizContainer");
 
+// ===== Utility Functions =====
 function saveFlashcards() {
   localStorage.setItem("flashcards", JSON.stringify(flashcards));
 }
 
-function createFlashcard(question, answer, category) {
-  const flashcard = document.createElement("div");
-  flashcard.className = "flashcard";
+function renderFlashcards() {
+  flashcardContainer.innerHTML = "";
+  const filtered = currentCategory === "all" ? flashcards : flashcards.filter(card => card.category === currentCategory);
+  filtered.forEach(card => {
+    const flashcard = document.createElement("div");
+    flashcard.className = "flashcard";
 
-  const front = document.createElement("div");
-  front.className = "front";
-  front.innerHTML = `<p>${question}</p>`;
+    const front = document.createElement("div");
+    front.className = "front";
+    front.innerHTML = `<p>${card.question}</p>`;
 
-  const back = document.createElement("div");
-  back.className = "back";
-  back.innerHTML = `<p>${answer}</p>`;
+    const back = document.createElement("div");
+    back.className = "back";
+    back.innerHTML = `<p>${card.answer}</p>`;
 
-  const deleteBtn = document.createElement("button");
-  deleteBtn.textContent = "✖";
-  deleteBtn.className = "delete-button";
-  deleteBtn.addEventListener("click", () => {
-    flashcards = flashcards.filter(card => !(card.question === question && card.answer === answer && card.category === category));
-    saveFlashcards();
-    showCategory(category);
+    flashcard.appendChild(front);
+    flashcard.appendChild(back);
+    flashcardContainer.appendChild(flashcard);
   });
-
-  flashcard.appendChild(front);
-  flashcard.appendChild(back);
-  flashcard.appendChild(deleteBtn);
-  flashcardContainer.appendChild(flashcard);
+  updateCategoryFilter();
 }
 
-flashcardForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const question = questionInput.value.trim();
-  const answer = answerInput.value.trim();
-  const category = prompt("Enter category:", "General") || "General";
-  if (!question || !answer) return;
-  flashcards.push({ question, answer, category });
-  saveFlashcards();
-  createFlashcard(question, answer, category);
-  questionInput.value = "";
-  answerInput.value = "";
-});
+function updateCategoryFilter() {
+  const categories = ["all", ...new Set(flashcards.map(card => card.category))];
+  categoryFilter.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join("");
+  categoryFilter.value = currentCategory;
+}
 
-shuffleButton?.addEventListener("click", () => {
-  flashcards = flashcards.sort(() => Math.random() - 0.5);
-  saveFlashcards();
-  showDashboard();
-});
-
-resetButton?.addEventListener("click", () => {
+function resetFlashcards() {
   localStorage.removeItem("flashcards");
-  location.reload();
-});
-
-clearButton?.addEventListener("click", () => {
-  flashcards = [];
+  flashcards = [
+    { question: "What is the capital of France?", answer: "Paris", category: "Geography" },
+    { question: "What is 2 + 2?", answer: "4", category: "Math" },
+    { question: "Who wrote '1984'?", answer: "George Orwell", category: "Literature" },
+    { question: "What is the largest ocean?", answer: "Pacific Ocean", category: "Geography" },
+    { question: "What is the capital of Spain?", answer: "Madrid", category: "Geography" },
+    { question: "Which is the best national soccer team in history?", answer: "Brazil", category: "Sports" },
+    { question: "Who was the last American Nobel Peace Price winer?", answer: "Barack Obama", category: "Politics" }
+  ];
+  currentCategory = "all";
   saveFlashcards();
-  flashcardContainer.innerHTML = "";
+  renderFlashcards();
+}
+
+// ===== Event Listeners =====
+form.addEventListener("submit", e => {
+  e.preventDefault();
+  const newCard = {
+    question: questionInput.value,
+    answer: answerInput.value,
+    category: categoryInput.value || "General"
+  };
+  flashcards.push(newCard);
+  saveFlashcards();
+  renderFlashcards();
+  form.reset();
 });
 
-exportButton?.addEventListener("click", () => {
-  const dataStr = JSON.stringify(flashcards, null, 2);
-  const blob = new Blob([dataStr], { type: "application/json" });
-  const url = URL.createObjectURL(blob);
-  const downloadLink = document.createElement("a");
-  downloadLink.href = url;
-  downloadLink.download = "flashcards.json";
-  downloadLink.click();
-  URL.revokeObjectURL(url);
+shuffleButton.addEventListener("click", () => {
+  flashcards.sort(() => Math.random() - 0.5);
+  renderFlashcards();
 });
 
-importFile?.addEventListener("change", (e) => {
+clearButton.addEventListener("click", resetFlashcards);
+
+exportButton.addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify(flashcards, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "flashcards.json";
+  link.click();
+});
+
+importFile.addEventListener("change", e => {
   const file = e.target.files[0];
-  if (!file) return;
   const reader = new FileReader();
-  reader.onload = function (event) {
+  reader.onload = e => {
     try {
-      const importedData = JSON.parse(event.target.result);
-      if (Array.isArray(importedData)) {
-        flashcards = flashcards.concat(importedData);
-        saveFlashcards();
-        flashcardContainer.innerHTML = "";
-        flashcards.forEach(card => createFlashcard(card.question, card.answer, card.category));
-        alert("Flashcards imported successfully!");
-      } else {
-        alert("Invalid file format.");
-      }
-    } catch (error) {
-      alert("Error reading file.");
+      const imported = JSON.parse(e.target.result);
+      flashcards = imported;
+      saveFlashcards();
+      renderFlashcards();
+    } catch {
+      alert("Invalid JSON file.");
     }
   };
   reader.readAsText(file);
 });
 
-// Theme Toggle
-const currentTheme = localStorage.getItem("theme") || "light";
-document.body.classList.toggle("dark", currentTheme === "dark");
-themeToggle.checked = currentTheme === "dark";
-
-themeToggle.addEventListener("change", () => {
-  const newTheme = themeToggle.checked ? "dark" : "light";
-  document.body.classList.toggle("dark", newTheme === "dark");
-  localStorage.setItem("theme", newTheme);
+categoryFilter.addEventListener("change", e => {
+  currentCategory = e.target.value;
+  renderFlashcards();
 });
 
-// Dashboard Functions
-function getCategories() {
-  const categories = new Set(flashcards.map(card => card.category || "Uncategorized"));
-  return Array.from(categories);
+themeToggle.addEventListener("change", () => {
+  document.body.classList.toggle("dark-mode", themeToggle.checked);
+});
+
+// ===== Quiz Mode (Enhanced) =====
+startQuizButton.addEventListener("click", () => {
+  quizQuestions = (currentCategory === "all"
+    ? [...flashcards]
+    : flashcards.filter(card => card.category === currentCategory)
+  ).sort(() => Math.random() - 0.5);
+
+  if (quizQuestions.length === 0) {
+    alert("No flashcards in this category to quiz.");
+    return;
+  }
+
+  currentQuestionIndex = 0;
+  totalQuestions = 0;
+  correctAnswers = 0;
+
+  flashcardContainer.style.display = "none";
+  quizContainer.style.display = "block";
+  showQuestion();
+});
+
+function showQuestion() {
+  const card = quizQuestions[currentQuestionIndex];
+  const options = shuffleOptions(card);
+
+  quizContainer.innerHTML = `
+    <h2>${card.question}</h2>
+    <div id="options-container">
+      ${options.map(option => `
+        <button class="option-btn" onclick="checkAnswer(this, '${card.answer}', '${option}')">
+          ${option}
+        </button>
+      `).join('')}
+    </div>
+  `;
 }
 
-function showDashboard() {
-  flashcardContainer.innerHTML = "";
-  categoryDashboard.innerHTML = "";
-  backButton.style.display = "none";
-  getCategories().forEach(category => {
-    const btn = document.createElement("button");
-    btn.textContent = category;
-    btn.addEventListener("click", () => showCategory(category));
-    categoryDashboard.appendChild(btn);
-  });
-  categoryDashboard.style.display = "flex";
-  flashcardForm.style.display = "none";
+function shuffleOptions(card) {
+  const options = [card.answer];
+  const wrongAnswers = flashcards
+    .map(c => c.answer)
+    .filter(ans => ans !== card.answer);
+  options.push(...wrongAnswers.sort(() => Math.random() - 0.5).slice(0, 3));
+  return options.sort(() => Math.random() - 0.5);
 }
 
-function showCategory(category) {
-  categoryDashboard.style.display = "none";
-  flashcardForm.style.display = "block";
-  backButton.style.display = "inline-block";
-  flashcardContainer.innerHTML = "";
-  flashcards.filter(card => (card.category || "Uncategorized") === category)
-    .forEach(card => createFlashcard(card.question, card.answer, card.category));
+function checkAnswer(button, correctAnswer, selectedOption) {
+  totalQuestions++;
+
+  const buttons = document.querySelectorAll(".option-btn");
+  buttons.forEach(btn => btn.disabled = true);
+
+  if (selectedOption === correctAnswer) {
+    correctAnswers++;
+    button.classList.add("correct");
+  } else {
+    button.classList.add("wrong");
+    buttons.forEach(btn => {
+      if (btn.innerText === correctAnswer) {
+        btn.classList.add("correct");
+      }
+    });
+  }
+
+  setTimeout(() => {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < quizQuestions.length) {
+      showQuestion();
+    } else {
+      showResults();
+    }
+  }, 1200);
 }
 
-backButton.addEventListener("click", showDashboard);
+function showResults() {
+  quizContainer.innerHTML = `
+    <h2>Quiz Complete!</h2>
+    <p>You scored ${correctAnswers} out of ${totalQuestions}.</p>
+    <button onclick="restartQuiz()">Restart Quiz</button>
+  `;
+}
 
-// Initial Load
-showDashboard();
+function restartQuiz() {
+  startQuiz(currentCategory);
+}
+
+// ===== Initial Render =====
+renderFlashcards();
